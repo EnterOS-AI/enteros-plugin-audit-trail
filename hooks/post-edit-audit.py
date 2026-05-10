@@ -5,10 +5,13 @@ import json
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _lib import read_input, warn_to_stderr  # noqa
+from _lib import get_repo_root, read_input, warn_to_stderr  # noqa
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-AUDIT = os.path.join(REPO, ".claude", "audit.jsonl")
+AUDIT = os.environ.get(
+    "AUDIT_PATH",
+    os.path.join(get_repo_root(__file__), ".claude", "audit.jsonl"),
+)
+REPO = os.path.dirname(AUDIT.rstrip("/"))  # for target-path stripping
 
 
 def main() -> None:
