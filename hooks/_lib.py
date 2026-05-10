@@ -4,7 +4,31 @@ Hooks receive JSON on stdin per the Claude Code hook spec, and may emit
 JSON on stdout or exit with code 2 to block. This module wraps both.
 """
 import json
+import os
 import sys
+
+
+def get_repo_root(hook_file: str) -> str:
+    """Resolve the repo root from a hook's __file__ path.
+
+    The plugin is installed at <repo>/hooks/<hook>.py.  We walk up two
+    levels (hooks/ → repo/ → parent-of-repo) to find the workspace root.
+
+    When __file__ is absolute (e.g. /tmp/molecule-ai-plugin-.../hooks/hook.py),
+    the naive dirname chain overshoots by one level, so we detect this by
+    checking whether the resolved parent contains a 'hooks/' subdirectory.
+    """
+    abs_hook = os.path.abspath(hook_file)
+    parent = os.path.dirname(abs_hook)
+    repo = os.path.dirname(parent)          # hooks/ → repo
+    workspace = os.path.dirname(repo)      # repo → workspace root
+
+    # Detect overshoot: if repo has a 'hooks/' subdir, workspace was right.
+    # Otherwise the hook was loaded with an absolute path and we walked too far.
+    if os.path.isdir(os.path.join(repo, "hooks")):
+        return workspace
+    # Back up one: the actual repo is one level deeper
+    return repo
 
 
 def read_input() -> dict:
